@@ -1,0 +1,169 @@
+{
+  "realm": "projectlos",
+  "enabled": true,
+  "displayName": "Project LOS",
+  "clients": [
+    {
+      "clientId": "projectlos-client",
+      "secret": "projectlos-secret-123",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "redirectUris": ["http://localhost:8080/*", "http://localhost:8081/*", "http://localhost:8082/*"],
+      "attributes": {
+        "post.logout.redirect.uris": "+",
+        "oauth2.device.authorization.grant.enabled": "false"
+      }
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN"
+      },
+      {
+        "name": "MAKER"
+      },
+      {
+        "name": "CHECKER"
+      },
+      {
+        "name": "APPROVER"
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@projectlos.com",
+      "emailVerified": true,
+      "firstName": "System",
+      "lastName": "Administrator",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN"]
+    },
+    {
+      "username": "maker",
+      "enabled": true,
+      "email": "maker@projectlos.com",
+      "emailVerified": true,
+      "firstName": "Loan",
+      "lastName": "Maker",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "maker123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["MAKER"]
+    },
+    {
+      "username": "checker",
+      "enabled": true,
+      "email": "checker@projectlos.com",
+      "emailVerified": true,
+      "firstName": "Loan",
+      "lastName": "Checker",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "checker123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["CHECKER"]
+    },
+    {
+      "username": "approver",
+      "enabled": true,
+      "email": "approver@projectlos.com",
+      "emailVerified": true,
+      "firstName": "Loan",
+      "lastName": "Approver",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "approver123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["APPROVER"]
+    },
+    {
+      "username": "testmaker",
+      "enabled": true,
+      "email": "testmaker@projectlos.com",
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "Maker",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "testmaker123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["MAKER"]
+    },
+    {
+      "username": "testchecker",
+      "enabled": true,
+      "email": "testchecker@projectlos.com",
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "Checker",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "testchecker123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["CHECKER"]
+    },
+    {
+      "username": "testapprover",
+      "enabled": true,
+      "email": "testapprover@projectlos.com",
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "Approver",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "testapprover123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["APPROVER"]
+    },
+    {
+      "username": "testadmin",
+      "enabled": true,
+      "email": "testadmin@projectlos.com",
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "testadmin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN"]
+    }
+  ]
+}

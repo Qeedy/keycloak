@@ -1,0 +1,11 @@
+[variables]
+NIXPACKS_NO_CACHE = '1'
+
+[phases.setup]
+nixPkgs = ['curl']
+
+[phases.build]
+cmds = ['echo "Using Dockerfile for build"']
+
+[start]
+cmd = '/opt/keycloak/bin/entrypoint.sh'
