@@ -21,6 +21,10 @@ export KC_HOSTNAME_STRICT=${KC_HOSTNAME_STRICT:-false}
 export KC_HOSTNAME_STRICT_HTTPS=${KC_HOSTNAME_STRICT_HTTPS:-false}
 export KC_HOSTNAME_STRICT_BACKCHANNEL=${KC_HOSTNAME_STRICT_BACKCHANNEL:-false}
 
+# Additional proxy and admin settings for Railway
+export KC_PROXY_HEADERS=${KC_PROXY_HEADERS:-forwarded|xforwarded}
+export KC_HOSTNAME_DEBUG=${KC_HOSTNAME_DEBUG:-true}
+
 # Add startup optimizations for faster boot and lower memory usage
 export KC_START_OPTIMISTIC_LOCKING=true
 export KC_CACHE=local
@@ -58,7 +62,15 @@ sleep 2
 # Set hostname for Railway
 if [ ! -z "$RAILWAY_PUBLIC_DOMAIN" ]; then
     export KC_HOSTNAME=${KC_HOSTNAME:-$RAILWAY_PUBLIC_DOMAIN}
+    export KC_HOSTNAME_URL=https://$RAILWAY_PUBLIC_DOMAIN
+    export KC_HOSTNAME_ADMIN_URL=https://$RAILWAY_PUBLIC_DOMAIN
     echo "Hostname set to: $KC_HOSTNAME"
+    echo "Admin URL set to: $KC_HOSTNAME_ADMIN_URL"
+else
+    # For local testing
+    export KC_HOSTNAME=${KC_HOSTNAME:-localhost:8080}
+    export KC_HOSTNAME_URL=http://localhost:8080
+    export KC_HOSTNAME_ADMIN_URL=http://localhost:8080
 fi
 
 # Clear all existing data to force fresh start
