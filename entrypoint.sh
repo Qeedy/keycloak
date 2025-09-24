@@ -73,13 +73,31 @@ if [ -f "/opt/keycloak/data/h2/keycloakdb.mv.db" ]; then
     rm -rf /opt/keycloak/data/h2
 fi
 
+# Remove any existing database configuration to force rebuild
+if [ -d "/opt/keycloak/data" ]; then
+    echo "Clearing existing database configuration..."
+    rm -rf /opt/keycloak/data/conf
+    rm -rf /opt/keycloak/data/tmp
+    rm -rf /opt/keycloak/data/log
+    # Keep only the import directory
+    mkdir -p /opt/keycloak/data/import
+fi
+
 # Import realm if file exists
 REALM_FILE="/opt/keycloak/data/import/projectlos-realm.json"
 if [ -f "$REALM_FILE" ]; then
     echo "Realm file found: $REALM_FILE"
     echo "Starting Keycloak with realm import..."
-    exec /opt/keycloak/bin/kc.sh start-dev --import-realm --optimized
+    if [ ! -z "$KC_DB_URL_HOST" ]; then
+        exec /opt/keycloak/bin/kc.sh start-dev --import-realm --optimized --db-url-host=${KC_DB_URL_HOST} --db-url-port=${KC_DB_URL_PORT} --db-url-database=${KC_DB_URL_DATABASE} --db-username=${KC_DB_USERNAME} --db-password=${KC_DB_PASSWORD} --db-schema=${KC_DB_SCHEMA}
+    else
+        exec /opt/keycloak/bin/kc.sh start-dev --import-realm --optimized
+    fi
 else
     echo "No realm file found. Starting Keycloak without import..."
-    exec /opt/keycloak/bin/kc.sh start-dev --optimized
+    if [ ! -z "$KC_DB_URL_HOST" ]; then
+        exec /opt/keycloak/bin/kc.sh start-dev --optimized --db-url-host=${KC_DB_URL_HOST} --db-url-port=${KC_DB_URL_PORT} --db-url-database=${KC_DB_URL_DATABASE} --db-username=${KC_DB_USERNAME} --db-password=${KC_DB_PASSWORD} --db-schema=${KC_DB_SCHEMA}
+    else
+        exec /opt/keycloak/bin/kc.sh start-dev --optimized
+    fi
 fi
