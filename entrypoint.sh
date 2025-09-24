@@ -22,7 +22,7 @@ export KC_HOSTNAME_STRICT_HTTPS=${KC_HOSTNAME_STRICT_HTTPS:-false}
 export KC_HOSTNAME_STRICT_BACKCHANNEL=${KC_HOSTNAME_STRICT_BACKCHANNEL:-false}
 
 # Additional proxy and admin settings for Railway
-export KC_PROXY_HEADERS=${KC_PROXY_HEADERS:-forwarded|xforwarded}
+export KC_PROXY_HEADERS=${KC_PROXY_HEADERS:-xforwarded}
 export KC_HOSTNAME_DEBUG=${KC_HOSTNAME_DEBUG:-true}
 
 # Add startup optimizations for faster boot and lower memory usage
