@@ -25,6 +25,22 @@ export KC_HOSTNAME_STRICT_BACKCHANNEL=${KC_HOSTNAME_STRICT_BACKCHANNEL:-false}
 export KC_PROXY_HEADERS=${KC_PROXY_HEADERS:-xforwarded}
 export KC_HOSTNAME_DEBUG=${KC_HOSTNAME_DEBUG:-true}
 
+# Force issuer to use the configured hostname (important for private domains)
+export KC_HOSTNAME_STRICT_BACKCHANNEL=${KC_HOSTNAME_STRICT_BACKCHANNEL:-false}
+export KC_HOSTNAME_BACKCHANNEL_DYNAMIC=${KC_HOSTNAME_BACKCHANNEL_DYNAMIC:-false}
+
+# Special handling for Railway private domains (HTTP only)
+if [ ! -z "$RAILWAY_PRIVATE_DOMAIN" ]; then
+    echo "🔧 Configuring for Railway private domain (HTTP)..."
+    export KC_HOSTNAME_STRICT_HTTPS=false
+    export KC_HTTP_ENABLED=true
+    export KC_PROXY=edge
+    export KC_HOSTNAME_PORT=80
+    echo "   - HTTPS strict mode: disabled"
+    echo "   - HTTP enabled: true"
+    echo "   - Port: 80"
+fi
+
 # Add startup optimizations for faster boot and lower memory usage
 export KC_START_OPTIMISTIC_LOCKING=true
 export KC_CACHE=local
@@ -60,12 +76,21 @@ echo "Testing database connection..."
 sleep 2
 
 # Set hostname for Railway
-if [ ! -z "$RAILWAY_PUBLIC_DOMAIN" ]; then
+# Check for private domain first (for internal communication)
+# NOTE: Railway private domains use HTTP (port 80), not HTTPS!
+if [ ! -z "$RAILWAY_PRIVATE_DOMAIN" ]; then
+    export KC_HOSTNAME=${KC_HOSTNAME:-$RAILWAY_PRIVATE_DOMAIN}
+    export KC_HOSTNAME_URL=http://$RAILWAY_PRIVATE_DOMAIN
+    export KC_HOSTNAME_ADMIN_URL=http://$RAILWAY_PRIVATE_DOMAIN
+    echo "Hostname set to private domain: $KC_HOSTNAME"
+    echo "Admin URL set to: $KC_HOSTNAME_ADMIN_URL (HTTP)"
+    echo "⚠️  Private domain uses HTTP, not HTTPS!"
+elif [ ! -z "$RAILWAY_PUBLIC_DOMAIN" ]; then
     export KC_HOSTNAME=${KC_HOSTNAME:-$RAILWAY_PUBLIC_DOMAIN}
     export KC_HOSTNAME_URL=https://$RAILWAY_PUBLIC_DOMAIN
     export KC_HOSTNAME_ADMIN_URL=https://$RAILWAY_PUBLIC_DOMAIN
-    echo "Hostname set to: $KC_HOSTNAME"
-    echo "Admin URL set to: $KC_HOSTNAME_ADMIN_URL"
+    echo "Hostname set to public domain: $KC_HOSTNAME"
+    echo "Admin URL set to: $KC_HOSTNAME_ADMIN_URL (HTTPS)"
 else
     # For local testing
     export KC_HOSTNAME=${KC_HOSTNAME:-localhost:8080}
