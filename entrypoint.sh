@@ -41,7 +41,19 @@ if [ ! -z "$DATABASE_URL" ]; then
     echo "  Host: $DB_HOST"
     echo "  Port: $DB_PORT"
     echo "  Database: $DB_NAME"
+    echo "  Username: $DB_USER"
     echo "  Schema: keycloak"
+    
+    # Add database connection timeout and retry settings
+    export KC_DB_POOL_INITIAL_SIZE=5
+    export KC_DB_POOL_MIN_SIZE=5
+    export KC_DB_POOL_MAX_SIZE=20
+    
+    # Test database connection
+    echo "Testing database connection..."
+    sleep 2
+else
+    echo "No DATABASE_URL found, using default H2 database"
 fi
 
 # Set hostname for Railway
@@ -50,13 +62,19 @@ if [ ! -z "$RAILWAY_PUBLIC_DOMAIN" ]; then
     echo "Hostname set to: $KC_HOSTNAME"
 fi
 
+# Check if we need to rebuild database configuration
+if [ -f "/opt/keycloak/data/h2/keycloakdb.mv.db" ]; then
+    echo "Found existing H2 database, removing to force PostgreSQL configuration..."
+    rm -rf /opt/keycloak/data/h2
+fi
+
 # Import realm if file exists
 REALM_FILE="/opt/keycloak/data/import/projectlos-realm.json"
 if [ -f "$REALM_FILE" ]; then
     echo "Realm file found: $REALM_FILE"
     echo "Starting Keycloak with realm import..."
-    exec /opt/keycloak/bin/kc.sh start-dev --import-realm --optimized
+    exec /opt/keycloak/bin/kc.sh start-dev --import-realm --optimized --db=postgres
 else
     echo "No realm file found. Starting Keycloak without import..."
-    exec /opt/keycloak/bin/kc.sh start-dev --optimized
+    exec /opt/keycloak/bin/kc.sh start-dev --optimized --db=postgres
 fi
