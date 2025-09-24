@@ -21,11 +21,14 @@ export KC_HOSTNAME_STRICT=${KC_HOSTNAME_STRICT:-false}
 export KC_HOSTNAME_STRICT_HTTPS=${KC_HOSTNAME_STRICT_HTTPS:-false}
 export KC_HOSTNAME_STRICT_BACKCHANNEL=${KC_HOSTNAME_STRICT_BACKCHANNEL:-false}
 
-# Add startup optimizations for faster boot
+# Add startup optimizations for faster boot and lower memory usage
 export KC_START_OPTIMISTIC_LOCKING=true
 export KC_CACHE=local
 export KC_CACHE_STACK=kubernetes
 export KC_LOG_LEVEL=${KC_LOG_LEVEL:-INFO}
+
+# JVM Memory optimizations for Railway's limited RAM
+export JAVA_OPTS_APPEND="-Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m -XX:MetaspaceSize=64m -Xss256k -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication"
 
 # Set PostgreSQL database configuration
 export KC_DB=postgres
@@ -43,10 +46,10 @@ echo "  Database: $KC_DB_URL_DATABASE"
 echo "  Username: $KC_DB_USERNAME"
 echo "  Schema: $KC_DB_SCHEMA"
 
-# Add database connection timeout and retry settings
-export KC_DB_POOL_INITIAL_SIZE=5
-export KC_DB_POOL_MIN_SIZE=5
-export KC_DB_POOL_MAX_SIZE=20
+# Add database connection timeout and retry settings (reduced for memory efficiency)
+export KC_DB_POOL_INITIAL_SIZE=2
+export KC_DB_POOL_MIN_SIZE=2
+export KC_DB_POOL_MAX_SIZE=10
 
 # Test database connection
 echo "Testing database connection..."

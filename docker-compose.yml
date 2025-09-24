@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  keycloak:
+    build: .
+    ports:
+      - "8080:8080"
+    mem_limit: 768m
+    memswap_limit: 768m
+    environment:
+      # Database Configuration
+      KC_DB: postgres
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: yaNSDZveAOsFmqFZmAGiRfUHWrQIKAYi
+      KC_DB_URL_HOST: shuttle.proxy.rlwy.net
+      KC_DB_URL_PORT: 22024
+      KC_DB_URL_DATABASE: railway
+      KC_DB_SCHEMA: keycloak
+      
+      # Keycloak Admin
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      
+      # Performance Settings
+      KC_LOG_LEVEL: INFO
+      KC_START_OPTIMISTIC_LOCKING: true
+      KC_CACHE: local
+      
+      # Hostname (optional for local testing)
+      KC_HOSTNAME: localhost
+      KC_HTTP_ENABLED: true
+      KC_PROXY: edge
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HOSTNAME_STRICT_BACKCHANNEL: false
