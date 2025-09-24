@@ -23,11 +23,11 @@ COPY entrypoint.sh /opt/keycloak/bin/entrypoint.sh
 # Make scripts executable
 RUN chmod +x /opt/keycloak/bin/entrypoint.sh
 
-# Set ownership
-RUN chown -R keycloak:keycloak /opt/keycloak/data /opt/keycloak/bin/entrypoint.sh
+# Set ownership (Keycloak 26.0.0 uses UID 1000)
+RUN chown -R 1000:1000 /opt/keycloak/data /opt/keycloak/bin/entrypoint.sh
 
-# Switch back to keycloak user
-USER keycloak
+# Switch back to keycloak user (UID 1000)
+USER 1000
 
 # Expose port
 EXPOSE 8080
