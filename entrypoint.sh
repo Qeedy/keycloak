@@ -26,20 +26,23 @@ export KC_PROXY_HEADERS=${KC_PROXY_HEADERS:-xforwarded}
 export KC_HOSTNAME_DEBUG=${KC_HOSTNAME_DEBUG:-true}
 
 # Force issuer to use the configured hostname (important for private domains)
-export KC_HOSTNAME_STRICT_BACKCHANNEL=${KC_HOSTNAME_STRICT_BACKCHANNEL:-false}
-export KC_HOSTNAME_BACKCHANNEL_DYNAMIC=${KC_HOSTNAME_BACKCHANNEL_DYNAMIC:-false}
+# Note: These will be overridden by Railway configuration below
 
-# Special handling for Railway private domains (HTTP only)
-if [ ! -z "$RAILWAY_PRIVATE_DOMAIN" ]; then
-    echo "🔧 Configuring for Railway private domain (HTTP)..."
-    export KC_HOSTNAME_STRICT_HTTPS=false
-    export KC_HTTP_ENABLED=true
-    export KC_PROXY=edge
-    export KC_HOSTNAME_PORT=80
-    echo "   - HTTPS strict mode: disabled"
-    echo "   - HTTP enabled: true"
-    echo "   - Port: 80"
-fi
+# Enhanced Railway configuration for dual domain support
+echo "🔧 Configuring Railway networking..."
+export KC_HOSTNAME_STRICT_HTTPS=false
+export KC_HTTP_ENABLED=true
+export KC_PROXY=edge
+
+# Allow both HTTP and HTTPS protocols
+export KC_HOSTNAME_STRICT=false
+export KC_HOSTNAME_STRICT_BACKCHANNEL=false
+export KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
+
+echo "   - HTTPS strict mode: disabled"
+echo "   - HTTP enabled: true"
+echo "   - Backchannel dynamic: true (allows HTTP for internal)"
+echo "   - Proxy mode: edge"
 
 # Add startup optimizations for faster boot and lower memory usage
 export KC_START_OPTIMISTIC_LOCKING=true
@@ -75,27 +78,37 @@ export KC_DB_POOL_MAX_SIZE=10
 echo "Testing database connection..."
 sleep 2
 
-# Set hostname for Railway
-# Check for private domain first (for internal communication)
-# NOTE: Railway private domains use HTTP (port 80), not HTTPS!
-if [ ! -z "$RAILWAY_PRIVATE_DOMAIN" ]; then
-    export KC_HOSTNAME=${KC_HOSTNAME:-$RAILWAY_PRIVATE_DOMAIN}
-    export KC_HOSTNAME_URL=http://$RAILWAY_PRIVATE_DOMAIN
-    export KC_HOSTNAME_ADMIN_URL=http://$RAILWAY_PRIVATE_DOMAIN
-    echo "Hostname set to private domain: $KC_HOSTNAME"
-    echo "Admin URL set to: $KC_HOSTNAME_ADMIN_URL (HTTP)"
-    echo "⚠️  Private domain uses HTTP, not HTTPS!"
-elif [ ! -z "$RAILWAY_PUBLIC_DOMAIN" ]; then
+# Set hostname for Railway - DUAL DOMAIN STRATEGY
+# Strategy: Use PUBLIC domain for admin console (HTTPS), but configure for internal HTTP access
+if [ ! -z "$RAILWAY_PUBLIC_DOMAIN" ]; then
+    # Use public domain as primary hostname for admin console access
     export KC_HOSTNAME=${KC_HOSTNAME:-$RAILWAY_PUBLIC_DOMAIN}
     export KC_HOSTNAME_URL=https://$RAILWAY_PUBLIC_DOMAIN
     export KC_HOSTNAME_ADMIN_URL=https://$RAILWAY_PUBLIC_DOMAIN
-    echo "Hostname set to public domain: $KC_HOSTNAME"
-    echo "Admin URL set to: $KC_HOSTNAME_ADMIN_URL (HTTPS)"
+    echo "🌐 Hostname set to public domain: $KC_HOSTNAME"
+    echo "🔒 Admin URL: $KC_HOSTNAME_ADMIN_URL (HTTPS)"
+    
+    # Configure for internal HTTP communication if private domain exists
+    if [ ! -z "$RAILWAY_PRIVATE_DOMAIN" ]; then
+        echo "🔧 Private domain available: $RAILWAY_PRIVATE_DOMAIN"
+        echo "⚡ Internal JWT issuer will use HTTP for service-to-service communication"
+        # Set backchannel to allow HTTP for internal communication
+        export KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
+        export KC_HOSTNAME_STRICT_BACKCHANNEL=false
+    fi
+elif [ ! -z "$RAILWAY_PRIVATE_DOMAIN" ]; then
+    # Fallback to private domain only if public domain not available
+    export KC_HOSTNAME=${KC_HOSTNAME:-$RAILWAY_PRIVATE_DOMAIN}
+    export KC_HOSTNAME_URL=http://$RAILWAY_PRIVATE_DOMAIN
+    export KC_HOSTNAME_ADMIN_URL=http://$RAILWAY_PRIVATE_DOMAIN
+    echo "🔧 Hostname set to private domain only: $KC_HOSTNAME"
+    echo "⚠️  Admin console may not be accessible externally"
 else
     # For local testing
     export KC_HOSTNAME=${KC_HOSTNAME:-localhost:8080}
     export KC_HOSTNAME_URL=http://localhost:8080
     export KC_HOSTNAME_ADMIN_URL=http://localhost:8080
+    echo "🏠 Local testing mode"
 fi
 
 # Clear all existing data to force fresh start
