@@ -33,9 +33,14 @@ if [ ! -z "$DATABASE_URL" ]; then
     DB_URL_PARSED=$(echo $DATABASE_URL | sed 's/postgres:\/\/\([^:]*\):\([^@]*\)@\([^:]*\):\([^\/]*\)\/\(.*\)/\1 \2 \3 \4 \5/')
     read -r DB_USER DB_PASS DB_HOST DB_PORT DB_NAME <<< "$DB_URL_PARSED"
     
+    # Set Keycloak database environment variables
+    export KC_DB=postgres
     export KC_DB_USERNAME=${KC_DB_USERNAME:-$DB_USER}
     export KC_DB_PASSWORD=${KC_DB_PASSWORD:-$DB_PASS}
-    export KC_DB_URL=${KC_DB_URL:-"jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME?currentSchema=keycloak"}
+    export KC_DB_URL_HOST=${KC_DB_URL_HOST:-$DB_HOST}
+    export KC_DB_URL_PORT=${KC_DB_URL_PORT:-$DB_PORT}
+    export KC_DB_URL_DATABASE=${KC_DB_URL_DATABASE:-$DB_NAME}
+    export KC_DB_SCHEMA=keycloak
     
     echo "Database configuration:"
     echo "  Host: $DB_HOST"
@@ -73,8 +78,8 @@ REALM_FILE="/opt/keycloak/data/import/projectlos-realm.json"
 if [ -f "$REALM_FILE" ]; then
     echo "Realm file found: $REALM_FILE"
     echo "Starting Keycloak with realm import..."
-    exec /opt/keycloak/bin/kc.sh start-dev --import-realm --optimized --db=postgres
+    exec /opt/keycloak/bin/kc.sh start-dev --import-realm --optimized
 else
     echo "No realm file found. Starting Keycloak without import..."
-    exec /opt/keycloak/bin/kc.sh start-dev --optimized --db=postgres
+    exec /opt/keycloak/bin/kc.sh start-dev --optimized
 fi
