@@ -27,39 +27,30 @@ export KC_CACHE=local
 export KC_CACHE_STACK=kubernetes
 export KC_LOG_LEVEL=${KC_LOG_LEVEL:-INFO}
 
-# Parse DATABASE_URL for Railway
-if [ ! -z "$DATABASE_URL" ]; then
-    # Extract components from DATABASE_URL
-    DB_URL_PARSED=$(echo $DATABASE_URL | sed 's/postgres:\/\/\([^:]*\):\([^@]*\)@\([^:]*\):\([^\/]*\)\/\(.*\)/\1 \2 \3 \4 \5/')
-    read -r DB_USER DB_PASS DB_HOST DB_PORT DB_NAME <<< "$DB_URL_PARSED"
-    
-    # Set Keycloak database environment variables
-    export KC_DB=postgres
-    export KC_DB_USERNAME=${KC_DB_USERNAME:-$DB_USER}
-    export KC_DB_PASSWORD=${KC_DB_PASSWORD:-$DB_PASS}
-    export KC_DB_URL_HOST=${KC_DB_URL_HOST:-$DB_HOST}
-    export KC_DB_URL_PORT=${KC_DB_URL_PORT:-$DB_PORT}
-    export KC_DB_URL_DATABASE=${KC_DB_URL_DATABASE:-$DB_NAME}
-    export KC_DB_SCHEMA=keycloak
-    
-    echo "Database configuration:"
-    echo "  Host: $DB_HOST"
-    echo "  Port: $DB_PORT"
-    echo "  Database: $DB_NAME"
-    echo "  Username: $DB_USER"
-    echo "  Schema: keycloak"
-    
-    # Add database connection timeout and retry settings
-    export KC_DB_POOL_INITIAL_SIZE=5
-    export KC_DB_POOL_MIN_SIZE=5
-    export KC_DB_POOL_MAX_SIZE=20
-    
-    # Test database connection
-    echo "Testing database connection..."
-    sleep 2
-else
-    echo "No DATABASE_URL found, using default H2 database"
-fi
+# Set PostgreSQL database configuration
+export KC_DB=postgres
+export KC_DB_USERNAME=${KC_DB_USERNAME:-postgres}
+export KC_DB_PASSWORD=${KC_DB_PASSWORD:-yaNSDZveAOsFmqFZmAGiRfUHWrQIKAYi}
+export KC_DB_URL_HOST=${KC_DB_URL_HOST:-shuttle.proxy.rlwy.net}
+export KC_DB_URL_PORT=${KC_DB_URL_PORT:-22024}
+export KC_DB_URL_DATABASE=${KC_DB_URL_DATABASE:-railway}
+export KC_DB_SCHEMA=keycloak
+
+echo "Database configuration:"
+echo "  Host: $KC_DB_URL_HOST"
+echo "  Port: $KC_DB_URL_PORT"
+echo "  Database: $KC_DB_URL_DATABASE"
+echo "  Username: $KC_DB_USERNAME"
+echo "  Schema: $KC_DB_SCHEMA"
+
+# Add database connection timeout and retry settings
+export KC_DB_POOL_INITIAL_SIZE=5
+export KC_DB_POOL_MIN_SIZE=5
+export KC_DB_POOL_MAX_SIZE=20
+
+# Test database connection
+echo "Testing database connection..."
+sleep 2
 
 # Set hostname for Railway
 if [ ! -z "$RAILWAY_PUBLIC_DOMAIN" ]; then
@@ -67,37 +58,13 @@ if [ ! -z "$RAILWAY_PUBLIC_DOMAIN" ]; then
     echo "Hostname set to: $KC_HOSTNAME"
 fi
 
-# Check if we need to rebuild database configuration
-if [ -f "/opt/keycloak/data/h2/keycloakdb.mv.db" ]; then
-    echo "Found existing H2 database, removing to force PostgreSQL configuration..."
-    rm -rf /opt/keycloak/data/h2
-fi
+# Clear all existing data to force fresh start
+echo "Clearing all existing Keycloak data to force fresh configuration..."
+rm -rf /opt/keycloak/data/*
 
-# Remove any existing database configuration to force rebuild
-if [ -d "/opt/keycloak/data" ]; then
-    echo "Clearing existing database configuration..."
-    rm -rf /opt/keycloak/data/conf
-    rm -rf /opt/keycloak/data/tmp
-    rm -rf /opt/keycloak/data/log
-    # Keep only the import directory
-    mkdir -p /opt/keycloak/data/import
-fi
+# Recreate necessary directories
+mkdir -p /opt/keycloak/data/import
 
-# Import realm if file exists
-REALM_FILE="/opt/keycloak/data/import/projectlos-realm.json"
-if [ -f "$REALM_FILE" ]; then
-    echo "Realm file found: $REALM_FILE"
-    echo "Starting Keycloak with realm import..."
-    if [ ! -z "$KC_DB_URL_HOST" ]; then
-        exec /opt/keycloak/bin/kc.sh start-dev --import-realm --optimized --db-url-host=${KC_DB_URL_HOST} --db-url-port=${KC_DB_URL_PORT} --db-url-database=${KC_DB_URL_DATABASE} --db-username=${KC_DB_USERNAME} --db-password=${KC_DB_PASSWORD} --db-schema=${KC_DB_SCHEMA}
-    else
-        exec /opt/keycloak/bin/kc.sh start-dev --import-realm --optimized
-    fi
-else
-    echo "No realm file found. Starting Keycloak without import..."
-    if [ ! -z "$KC_DB_URL_HOST" ]; then
-        exec /opt/keycloak/bin/kc.sh start-dev --optimized --db-url-host=${KC_DB_URL_HOST} --db-url-port=${KC_DB_URL_PORT} --db-url-database=${KC_DB_URL_DATABASE} --db-username=${KC_DB_USERNAME} --db-password=${KC_DB_PASSWORD} --db-schema=${KC_DB_SCHEMA}
-    else
-        exec /opt/keycloak/bin/kc.sh start-dev --optimized
-    fi
-fi
+# Start Keycloak without automatic realm import
+echo "Starting Keycloak (realm import will be done manually later)..."
+exec /opt/keycloak/bin/kc.sh start-dev
