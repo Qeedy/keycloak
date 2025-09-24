@@ -35,6 +35,15 @@ export KC_PROXY=edge
 export KC_HOSTNAME_STRICT=false
 export KC_HOSTNAME_STRICT_BACKCHANNEL=false
 
+# Special configuration for private domain as primary
+if [ ! -z "$RAILWAY_PRIVATE_DOMAIN" ]; then
+    echo "🔧 Configuring for private domain as primary..."
+    export KC_HOSTNAME_PORT=80
+    export KC_HOSTNAME_STRICT_HTTPS=false
+    echo "   - Port: 80 (HTTP)"
+    echo "   - HTTPS strict: disabled"
+fi
+
 echo "   - HTTPS strict mode: disabled"
 echo "   - HTTP enabled: true"
 echo "   - Proxy mode: edge"
@@ -73,29 +82,31 @@ export KC_DB_POOL_MAX_SIZE=10
 echo "Testing database connection..."
 sleep 2
 
-# SIMPLIFIED HOSTNAME CONFIGURATION
-# Use public domain as primary, but allow HTTP for internal communication
-if [ ! -z "$RAILWAY_PUBLIC_DOMAIN" ]; then
+# HOSTNAME CONFIGURATION - PRIORITIZE PRIVATE DOMAIN FOR JWT ISSUER
+# Strategy: Use private domain as primary for JWT issuer, but allow admin access via public domain
+if [ ! -z "$RAILWAY_PRIVATE_DOMAIN" ]; then
+    # Use private domain as primary hostname for JWT issuer
+    export KC_HOSTNAME=${KC_HOSTNAME:-$RAILWAY_PRIVATE_DOMAIN}
+    export KC_HOSTNAME_URL=http://$RAILWAY_PRIVATE_DOMAIN
+    export KC_HOSTNAME_ADMIN_URL=http://$RAILWAY_PRIVATE_DOMAIN
+    echo "🔧 Hostname set to private domain: $KC_HOSTNAME"
+    echo "⚡ JWT issuer will use: http://$RAILWAY_PRIVATE_DOMAIN"
+    echo "🔒 Admin URL: $KC_HOSTNAME_ADMIN_URL (HTTP)"
+    
+    # If public domain exists, configure it for admin console access
+    if [ ! -z "$RAILWAY_PUBLIC_DOMAIN" ]; then
+        echo "🌐 Public domain available: $RAILWAY_PUBLIC_DOMAIN"
+        echo "🔒 Admin console accessible via: https://$RAILWAY_PUBLIC_DOMAIN/admin"
+        echo "   - Note: Admin console may need manual configuration for HTTPS"
+    fi
+elif [ ! -z "$RAILWAY_PUBLIC_DOMAIN" ]; then
+    # Fallback to public domain if private domain not available
     export KC_HOSTNAME=${KC_HOSTNAME:-$RAILWAY_PUBLIC_DOMAIN}
     export KC_HOSTNAME_URL=https://$RAILWAY_PUBLIC_DOMAIN
     export KC_HOSTNAME_ADMIN_URL=https://$RAILWAY_PUBLIC_DOMAIN
     echo "🌐 Hostname set to public domain: $KC_HOSTNAME"
     echo "🔒 Admin URL: $KC_HOSTNAME_ADMIN_URL (HTTPS)"
-    
-    # If private domain exists, configure it for backchannel
-    if [ ! -z "$RAILWAY_PRIVATE_DOMAIN" ]; then
-        echo "🔧 Private domain available: $RAILWAY_PRIVATE_DOMAIN"
-        echo "⚡ Backchannel will use private domain for internal communication"
-        export KC_HOSTNAME_BACKCHANNEL_URL=http://$RAILWAY_PRIVATE_DOMAIN
-        echo "   - Backchannel URL: $KC_HOSTNAME_BACKCHANNEL_URL"
-    fi
-elif [ ! -z "$RAILWAY_PRIVATE_DOMAIN" ]; then
-    # Fallback to private domain only if public domain not available
-    export KC_HOSTNAME=${KC_HOSTNAME:-$RAILWAY_PRIVATE_DOMAIN}
-    export KC_HOSTNAME_URL=http://$RAILWAY_PRIVATE_DOMAIN
-    export KC_HOSTNAME_ADMIN_URL=http://$RAILWAY_PRIVATE_DOMAIN
-    echo "🔧 Hostname set to private domain only: $KC_HOSTNAME"
-    echo "⚠️  Admin console may not be accessible externally"
+    echo "⚠️  JWT issuer will use HTTPS (not optimal for internal communication)"
 else
     # For local testing
     export KC_HOSTNAME=${KC_HOSTNAME:-localhost:8080}
