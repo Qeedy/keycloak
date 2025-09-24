@@ -1,13 +1,17 @@
+# Stage 1: Builder
+FROM registry.access.redhat.com/ubi9 AS builder
+RUN dnf install --installroot /mnt/rootfs curl --releasever 9 --setopt install_weak_deps=false --nodocs -y && \
+    dnf --installroot /mnt/rootfs clean all
+
+# Stage 2: Final
 FROM quay.io/keycloak/keycloak:26.0.0
+COPY --from=builder /mnt/rootfs /
 
 # Set working directory
 WORKDIR /opt/keycloak
 
-# Install curl for health checks
-USER root
-RUN microdnf install -y curl && microdnf clean all
-
 # Create necessary directories
+USER root
 RUN mkdir -p /opt/keycloak/data/import
 
 # Copy realm configuration
