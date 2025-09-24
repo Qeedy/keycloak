@@ -32,9 +32,5 @@ USER 1000
 # Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-  CMD curl -f http://localhost:8080/health/ready || exit 1
-
 # Use custom entrypoint
 ENTRYPOINT ["/opt/keycloak/bin/entrypoint.sh"]
