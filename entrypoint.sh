@@ -8,7 +8,7 @@ echo "Starting Keycloak service..."
 # Wait for database to be ready if DATABASE_URL is provided
 if [ ! -z "$DATABASE_URL" ]; then
     echo "Waiting for database to be ready..."
-    sleep 10
+    sleep 5
 fi
 
 # Set default environment variables if not provided
@@ -20,6 +20,12 @@ export KC_PROXY=${KC_PROXY:-edge}
 export KC_HOSTNAME_STRICT=${KC_HOSTNAME_STRICT:-false}
 export KC_HOSTNAME_STRICT_HTTPS=${KC_HOSTNAME_STRICT_HTTPS:-false}
 export KC_HOSTNAME_STRICT_BACKCHANNEL=${KC_HOSTNAME_STRICT_BACKCHANNEL:-false}
+
+# Add startup optimizations for faster boot
+export KC_START_OPTIMISTIC_LOCKING=true
+export KC_CACHE=local
+export KC_CACHE_STACK=kubernetes
+export KC_LOG_LEVEL=${KC_LOG_LEVEL:-INFO}
 
 # Parse DATABASE_URL for Railway
 if [ ! -z "$DATABASE_URL" ]; then
@@ -49,8 +55,8 @@ REALM_FILE="/opt/keycloak/data/import/projectlos-realm.json"
 if [ -f "$REALM_FILE" ]; then
     echo "Realm file found: $REALM_FILE"
     echo "Starting Keycloak with realm import..."
-    exec /opt/keycloak/bin/kc.sh start-dev --import-realm
+    exec /opt/keycloak/bin/kc.sh start-dev --import-realm --optimized
 else
     echo "No realm file found. Starting Keycloak without import..."
-    exec /opt/keycloak/bin/kc.sh start-dev
+    exec /opt/keycloak/bin/kc.sh start-dev --optimized
 fi
