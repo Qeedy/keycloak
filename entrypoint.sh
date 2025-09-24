@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Keycloak startup script for Railway deployment
+# Simplified Keycloak startup script for Railway deployment
 set -e
 
 echo "Starting Keycloak service..."
@@ -25,10 +25,7 @@ export KC_HOSTNAME_STRICT_BACKCHANNEL=${KC_HOSTNAME_STRICT_BACKCHANNEL:-false}
 export KC_PROXY_HEADERS=${KC_PROXY_HEADERS:-xforwarded}
 export KC_HOSTNAME_DEBUG=${KC_HOSTNAME_DEBUG:-true}
 
-# Force issuer to use the configured hostname (important for private domains)
-# Note: These will be overridden by Railway configuration below
-
-# Enhanced Railway configuration for dual domain support
+# Enhanced Railway configuration
 echo "🔧 Configuring Railway networking..."
 export KC_HOSTNAME_STRICT_HTTPS=false
 export KC_HTTP_ENABLED=true
@@ -37,11 +34,9 @@ export KC_PROXY=edge
 # Allow both HTTP and HTTPS protocols
 export KC_HOSTNAME_STRICT=false
 export KC_HOSTNAME_STRICT_BACKCHANNEL=false
-export KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
 
 echo "   - HTTPS strict mode: disabled"
 echo "   - HTTP enabled: true"
-echo "   - Backchannel dynamic: true (allows HTTP for internal)"
 echo "   - Proxy mode: edge"
 
 # Add startup optimizations for faster boot and lower memory usage
@@ -78,23 +73,21 @@ export KC_DB_POOL_MAX_SIZE=10
 echo "Testing database connection..."
 sleep 2
 
-# Set hostname for Railway - DUAL DOMAIN STRATEGY
-# Strategy: Use PUBLIC domain for admin console (HTTPS), but configure for internal HTTP access
+# SIMPLIFIED HOSTNAME CONFIGURATION
+# Use public domain as primary, but allow HTTP for internal communication
 if [ ! -z "$RAILWAY_PUBLIC_DOMAIN" ]; then
-    # Use public domain as primary hostname for admin console access
     export KC_HOSTNAME=${KC_HOSTNAME:-$RAILWAY_PUBLIC_DOMAIN}
     export KC_HOSTNAME_URL=https://$RAILWAY_PUBLIC_DOMAIN
     export KC_HOSTNAME_ADMIN_URL=https://$RAILWAY_PUBLIC_DOMAIN
     echo "🌐 Hostname set to public domain: $KC_HOSTNAME"
     echo "🔒 Admin URL: $KC_HOSTNAME_ADMIN_URL (HTTPS)"
     
-    # Configure for internal HTTP communication if private domain exists
+    # If private domain exists, configure it for backchannel
     if [ ! -z "$RAILWAY_PRIVATE_DOMAIN" ]; then
         echo "🔧 Private domain available: $RAILWAY_PRIVATE_DOMAIN"
-        echo "⚡ Internal JWT issuer will use HTTP for service-to-service communication"
-        # Set backchannel to allow HTTP for internal communication
-        export KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
-        export KC_HOSTNAME_STRICT_BACKCHANNEL=false
+        echo "⚡ Backchannel will use private domain for internal communication"
+        export KC_HOSTNAME_BACKCHANNEL_URL=http://$RAILWAY_PRIVATE_DOMAIN
+        echo "   - Backchannel URL: $KC_HOSTNAME_BACKCHANNEL_URL"
     fi
 elif [ ! -z "$RAILWAY_PRIVATE_DOMAIN" ]; then
     # Fallback to private domain only if public domain not available
