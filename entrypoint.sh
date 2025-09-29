@@ -25,14 +25,16 @@ export KC_HOSTNAME_STRICT_BACKCHANNEL=${KC_HOSTNAME_STRICT_BACKCHANNEL:-false}
 export KC_PROXY_HEADERS=${KC_PROXY_HEADERS:-xforwarded}
 export KC_HOSTNAME_DEBUG=${KC_HOSTNAME_DEBUG:-true}
 
-# Disable healthcheck endpoints
-export KC_HEALTH_ENABLED=false
-export KC_METRICS_ENABLED=false
+# Disable healthcheck endpoints via JVM options
+# Note: KC_HEALTH_ENABLED and KC_METRICS_ENABLED are not valid Keycloak options
+# Healthcheck will be disabled via JVM system properties
 
-# Additional healthcheck disable settings
-export KC_HTTP_RELATIVE_PATH=""
-export KC_HOSTNAME_STRICT_HTTPS=false
-export KC_HOSTNAME_STRICT=false
+# Additional settings to disable healthcheck
+export KC_HTTP_ENABLED=true
+export KC_PROXY=edge
+
+# Disable healthcheck via system properties
+export JAVA_OPTS_APPEND="$JAVA_OPTS_APPEND -Dquarkus.health.enabled=false -Dquarkus.metrics.enabled=false -Dquarkus.management.enabled=false -Dquarkus.management.health.enabled=false -Dquarkus.management.health.readiness.enabled=false -Dquarkus.management.health.liveness.enabled=false -Dquarkus.management.health.startup.enabled=false -Dquarkus.management.health.probes.enabled=false -Dquarkus.management.health.context-property-validation.enabled=false"
 
 # Add startup optimizations for faster boot and lower memory usage
 export KC_START_OPTIMISTIC_LOCKING=true
@@ -41,7 +43,8 @@ export KC_CACHE_STACK=kubernetes
 export KC_LOG_LEVEL=${KC_LOG_LEVEL:-INFO}
 
 # JVM Memory optimizations for Railway's limited RAM
-export JAVA_OPTS_APPEND="-Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m -XX:MetaspaceSize=64m -Xss256k -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication -Dquarkus.http.port=8080 -Dquarkus.http.host=0.0.0.0 -Dquarkus.health.enabled=false -Dquarkus.metrics.enabled=false"
+# Healthcheck disabled via JVM options
+export JAVA_OPTS_APPEND="-Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m -XX:MetaspaceSize=64m -Xss256k -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication -Dquarkus.http.port=8080 -Dquarkus.http.host=0.0.0.0"
 
 # Set PostgreSQL database configuration
 export KC_DB=postgres
@@ -89,14 +92,9 @@ rm -rf /opt/keycloak/data/*
 # Recreate necessary directories
 mkdir -p /opt/keycloak/data/import
 
-# Start Keycloak without automatic realm import and healthcheck
+# Start Keycloak without automatic realm import
 echo "Starting Keycloak (realm import will be done manually later)..."
-echo "Healthcheck endpoints disabled"
-echo "Starting on port 8080 without healthcheck endpoints"
+echo "Healthcheck disabled via JVM options"
 
-# Disable healthcheck at startup
-export KC_HEALTH_ENABLED=false
-export KC_METRICS_ENABLED=false
-
-exec /opt/keycloak/bin/kc.sh start-dev --health-enabled=false --metrics-enabled=false
+exec /opt/keycloak/bin/kc.sh start-dev
 
